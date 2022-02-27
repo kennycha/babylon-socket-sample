@@ -11,10 +11,12 @@ html(lang="en")
       h1 Babylon Socket Sample
     main
       section.controls
-        div#targetDiv.control
+        div#targetDiv.control target: 
         div#updateDiv.control
       section.views
         canvas#renderingCanvas
 
     //- script(src='/socket.io/socket.io.js')
+    script(src="https://preview.babylonjs.com/babylon.js")
+    script(src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js") 
     script(src='/public/js/app.js')

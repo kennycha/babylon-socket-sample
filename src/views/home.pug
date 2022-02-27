@@ -5,4 +5,16 @@ html(lang="en")
     meta(http-equiv="X-UA-Compatible", content="IE=edge")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     title Babylon Socket Sample
+    link(rel="stylesheet", href='/public/css/home.css')
   body 
+    header
+      h1 Babylon Socket Sample
+    main
+      section.controls
+        div#targetDiv.control
+        div#updateDiv.control
+      section.views
+        canvas#renderingCanvas
+
+    //- script(src='/socket.io/socket.io.js')
+    script(src='/public/js/app.js')

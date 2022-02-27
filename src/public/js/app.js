@@ -1,7 +1,36 @@
-let useName
 const targetDiv = document.querySelector('#targetDiv')
 const updateDiv = document.querySelector('#updateDiv')
 const renderingCanvas = document.querySelector('#renderingCanvas')
+
+let myName
+let myRoomName
+let currentTransformNode
+let controlTargets = []
+
+// Socket Code
+const socket = io()
+socket.on('welcome', (userName, roomName) => {
+  updateDiv.innerText = `${userName} joined ${roomName} room`
+})
+socket.on('transform', (userName, targetId, property, value, updatedAt) => {
+  if (myName !== userName) {
+    updateDiv.innerText = `${userName} updated at ${updatedAt}`
+    const currentTarget = controlTargets.find((target) => target.id === targetId)
+    switch (property) {
+      case 'position':
+        currentTarget.position = BABYLON.Vector3.FromArray(value)
+        break
+      case 'rotation':
+        currentTarget.rotationQuaternion = BABYLON.Quaternion.FromArray(value)
+        break
+      case 'scale':
+        currentTarget.scaling = BABYLON.Vector3.FromArray(value)
+        break
+      default:
+        break
+    }
+  }
+})
 
 // Babylon Code
 const DEFAULT_SKELETON_VIEWER_OPTION = {
@@ -49,6 +78,55 @@ const handleSceneReady = async (scene) => {
   const gizmoManager = new BABYLON.GizmoManager(scene)
   gizmoManager.usePointerToAttachGizmos = false
   gizmoManager.positionGizmoEnabled = true
+  
+  gizmoManager.gizmos.positionGizmo.xGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z } = currentTransformNode.position
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'position', [x, y, z])
+  })
+  gizmoManager.gizmos.positionGizmo.yGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z } = currentTransformNode.position
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'position', [x, y, z])
+  })
+  gizmoManager.gizmos.positionGizmo.zGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z } = currentTransformNode.position
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'position', [x, y, z])
+  })
+
+  gizmoManager.positionGizmoEnabled = false
+  gizmoManager.rotationGizmoEnabled = true
+
+  gizmoManager.gizmos.rotationGizmo.xGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z, w } = currentTransformNode.rotationQuaternion
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'rotation', [x, y, z, w])
+  })
+  gizmoManager.gizmos.rotationGizmo.yGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z, w } = currentTransformNode.rotationQuaternion
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'rotation', [x, y, z, w])
+  })
+  gizmoManager.gizmos.rotationGizmo.zGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z, w } = currentTransformNode.rotationQuaternion
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'rotation', [x, y, z, w])
+  })
+
+  gizmoManager.rotationGizmoEnabled = false
+  gizmoManager.scaleGizmoEnabled = true
+
+  gizmoManager.gizmos.scaleGizmo.xGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z } = currentTransformNode.scaling
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'scale', [x, y, z])
+  })
+  gizmoManager.gizmos.scaleGizmo.yGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z } = currentTransformNode.scaling
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'scale', [x, y, z])
+  })
+  gizmoManager.gizmos.scaleGizmo.zGizmo.dragBehavior.onDragEndObservable.add(() => {
+    const { x, y, z } = currentTransformNode.scaling
+    socket.emit('transform', myRoomName, currentTransformNode.id, 'scale', [x, y, z])
+  })
+
+  gizmoManager.scaleGizmoEnabled = false
+  gizmoManager.positionGizmoEnabled = true
+
 
   scene.onKeyboardObservable.add((keyboardInfo) => {
     if (keyboardInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
@@ -124,7 +202,9 @@ const handleSceneReady = async (scene) => {
   skeletons.forEach((skeleton) => {
     scene.addSkeleton(skeleton)
   })
+  controlTargets = transformNodes
   transformNodes.forEach((transformNode) => {
+    transformNode.rotate(BABYLON.Axis.X, 0)
     scene.addTransformNode(transformNode)
   })
   animationGroups.forEach((animationGroup) => {
@@ -134,6 +214,9 @@ const handleSceneReady = async (scene) => {
   new BABYLON.SkeletonViewer(skeletons[0], meshes[1], scene, true, meshes[1].renderingGroupId, DEFAULT_SKELETON_VIEWER_OPTION)
   skeletons[0].bones.forEach((bone) => {
     bone.id = `${bone.name}//bone`
+    const transformNode = bone.getTransformNode()
+    transformNode.id = `${bone.name}//transformNode`
+
     const joint = BABYLON.MeshBuilder.CreateSphere(bone.name, { diameter: 3 }, scene)
     joint.id = `${bone.name}//joint`
     joint.renderingGroupId = 2
@@ -141,9 +224,9 @@ const handleSceneReady = async (scene) => {
 
     joint.actionManager = new BABYLON.ActionManager(scene)
     joint.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickDownTrigger, () => {
-      targetDiv.innerText = `target: ${bone.name}`
-      const transformNode = bone.getTransformNode()
+      currentTransformNode = transformNode
       gizmoManager.attachToNode(transformNode)
+      targetDiv.innerText = `target: ${bone.name}`
     }))
     joint.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPointerOverTrigger, () => {
       scene.hoverCursor = 'pointer'
@@ -151,7 +234,7 @@ const handleSceneReady = async (scene) => {
   })
 }
 
-const initializeBabylon = () => {
+const initialize = () => {
   const engine = new BABYLON.Engine(renderingCanvas)
   const scene = new BABYLON.Scene(engine)
   scene.onReadyObservable.addOnce((scene) => {
@@ -163,21 +246,10 @@ const initializeBabylon = () => {
   engine.runRenderLoop(() => {
     scene.render()
   })
+
+  myName = prompt('type your name')
+  myRoomName = prompt('type room name')
+  socket.emit('enter', myName, myRoomName)
 }
 
-
-// Socket Code
-const initializeSocket = () => {
-  // console.log(useName)
-}
-
-
-// 
-
-const init = () => {
-  useName = prompt('Submit name')
-  initializeBabylon()
-  initializeSocket()
-}
-
-window.addEventListener('load', init)
+window.addEventListener('load', initialize)

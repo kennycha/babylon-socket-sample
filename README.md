@@ -1,3 +1,3 @@
 # Babylon Socket Sample
 
-Sample app for editing 3D models collaborately with Babylonjs and WebSockets.
+Sample app for editing 3D models collaboratively with Babylonjs and WebSockets.

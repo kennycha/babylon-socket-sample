@@ -1,7 +1,7 @@
 {
   "name": "babylon-socket-sample",
   "version": "1.0.0",
-  "description": "Collaborative 3D Editing with Babylonjs and WebSockets",
+  "description": "Collaborative 3D Editing app with Babylonjs and WebSockets",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon"
